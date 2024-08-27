@@ -1,0 +1,3 @@
+#define BACKWARD_SPEED 90
+#define FORWARD_SPEED 90
+#define TURN_SPEED 90
