@@ -20,15 +20,15 @@ def centriod(roi):
 
 def forward():
     arduino.write(b'F9')
-    cv.putText(frame, "Go Forward", (450, 40), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+cv.putText(frame,"GoForward",(450,40),      cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
     
 def backward():
     arduino.write(b'B9')
-    cv.putText(frame, "Go Backward", (450, 40), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+cv.putText(frame,"GoBackward",(450,40), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)              
 
 def left():
     arduino.write(b'Ld')
-    cv.putText(frame, "Move Left", (450, 40), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+cv.putText(frame,"MoveLeft",(450,40),          cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
     
 def right():
     arduino.write(b'Rd')
@@ -36,15 +36,15 @@ def right():
     
 def stop():
     arduino.write(b'SS')
-    cv.putText(frame, "Stop", (450, 40), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+    cv.putText(frame,"Stop",(450,40),  cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
 
 def calculate_distance(focal_length, known_width, pixel_width):
     dist = (known_width * focal_length) / pixel_width
     return dist
 
 def detect_object(image):
-    color_lower = np.array([51, 175, 62])  # example: lower bound for blue color
-    color_upper = np.array([78, 255, 202])  # example: upper bound for blue color
+color_lower = np.array([51, 175, 62])  # example: lower bound for blue color
+color_upper = np.array([78, 255, 202])  # example: upper bound for blue color
     hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)
     blurred = cv.GaussianBlur(hsv, (5, 5), 0)
     mask = cv.inRange(blurred, color_lower, color_upper)
@@ -56,36 +56,44 @@ def detect_object(image):
         epsilon = 0.03 * cv.arcLength(c, True)
         approx = cv.approxPolyDP(c, epsilon, True)
                                 
-        if len(approx) == 3:
-            shape = "triangle"
-            #cx, cy = centriod(approx)
-            #cv.putText(frame, shape, (cx, cy), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
-            
-        elif len(approx) == 8:
-            shape = "circle"
-            #cx, cy = centriod(approx)
-            #cv.putText(frame, shape, (cx, cy), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
-            
-        elif len(approx) == 4:
-            shape = "Rectangle"
-            cx, cy = centriod(approx)
-            cv.putText(frame, shape, (cx, cy), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
-            x, y, w, h = cv.boundingRect(approx)
-            cv.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 3)
-        
-            return cx, cy, w
+        return approx
     
     
 cap = cv.VideoCapture(0)
-time.sleep(3)
+time.sleep(2)
+
 while True:
-    _, frame = cap.read()
-    if not True:
-        break
+    ret, frame = cap.read()
+    if not ret or frame is None:
+	print(“No frame captured, stopping robot…”)
+	stop()
+        	break
 
-    cx, cy, marker_width = detect_object(frame)
+    approx_value = detect_object(frame)
 
-    distance = calculate_distance(FOCAL_LENGTH, KNOWN_WIDTH, marker_width)
+if approx_value is None:
+	print(“No frame captured, stopping robot…”)
+	stop()
+	cap.release()
+	cv.destoryAllWindows()
+	break
+
+else:
+	if len(approx._value) >8:
+		shape = “circle”
+		cx, cy = centroid(approx_value)
+		cv.putText(frame, shape, (cx, cy), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
+		stop()
+
+elif len(approx._value) == 4:
+	shape = “Rectangle”
+	cx, cy = centroid(approx._value)
+	print(f“Point of X-coordinate is {cx} and Point of Y-coordinate is {cy}”)
+cv.putText(frame, shape, (cx, cy), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), -3)
+x, y, w, h = cv.boundingRect(approx._value)
+cv.rectangle(frame, (x, y), (x + w,  y + h), (0, 255, 0), 3)
+
+distance = calculate_distance(FOCAL_LENGTH, KNOWN_WIDTH, marker_width)
     
     cv.putText(frame, f"Distance: {distance:.2f} cm", (10, 30), cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
     # Get image dimensions
@@ -136,4 +144,3 @@ while True:
 arduino.close()
 cap.release()
 cv.destroyAllWindows()
-
